@@ -25,3 +25,25 @@ Analyze repository status, verify tools and runtime environment, initialize a cl
 - Approved staged progression with Git commits for each development milestone.
 
 ---
+
+### Prompt 2: Design System, Layout Structure & Core State Architecture
+
+**Prompt:**
+> Build the core application structure for MediCare Hub: design system in pure Vanilla CSS (CSS variables, responsive shell, typography, cards, badges, modal), mock datasets (doctors, patients, appointments, specialties), utility formatters, responsive Sidebar and Navbar layouts, and custom hook `useAppointments` with localStorage persistence.
+
+**Purpose:**
+Establish the foundation of the frontend without jumping straight into haphazard UI coding. Ensure modular directory layout (`src/layouts`, `src/components/common`, `src/hooks`, `src/utils`, `src/data`).
+
+**Result:**
+- Created complete Vanilla CSS tokens and styles in `src/index.css`.
+- Created structured clinical datasets in `src/data/mockData.js`.
+- Implemented responsive `Sidebar` with mobile drawer backdrop and `Navbar` with search.
+- Created reusable components `StatusBadge`, `StatsCard`, `Modal`, `Toast`.
+- Created `useAppointments` custom hook providing state, localStorage caching, and simulated network delays.
+
+**My Review:**
+- Verified that no external CSS UI library (such as Tailwind or Bootstrap) was introduced, maintaining pure Vanilla CSS control.
+- Confirmed responsive breakpoint handling for tablets and phones (sidebar slides into off-canvas drawer).
+- Ensured state hooks store pure serializable data in `localStorage` with fallback to default mock records.
+
+---
