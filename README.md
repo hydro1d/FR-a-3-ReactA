@@ -1,4 +1,4 @@
-# MediCare Hub — Clinic & Appointment Management System
+# MediCare Hub || Clinic & Appointment Management System
 
 A modern, responsive, frontend-only clinic management portal built with **React 19** and **Vanilla CSS**. Developed with AI assistance paired with rigorous human code review, refactoring, and accessibility enhancements.
 
@@ -109,6 +109,6 @@ FR-a-3-ReactA/
 
 ---
 
-## 📝 Assignment Documentation
+## 📝 Documentation (Psychology behind the work)
 - Prompts Log: [docs/AI_PROMPTS.md](docs/AI_PROMPTS.md)
 - AI Assistance & Refactoring Report: [docs/AI_ASSISTANCE.md](docs/AI_ASSISTANCE.md)
