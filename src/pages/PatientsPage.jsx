@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { Search, UserPlus, Phone, Mail, FileText, AlertTriangle, Calendar } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
 
 export default function PatientsPage({

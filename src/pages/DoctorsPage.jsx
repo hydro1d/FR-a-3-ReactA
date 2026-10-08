@@ -1,16 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  Star,
-  Clock,
-  Calendar,
-  Phone,
-  Mail,
-  MapPin,
-  CheckCircle,
-  Plus,
-  Stethoscope
-} from 'lucide-react';
+import { Stethoscope } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { SPECIALTIES } from '../data/mockData';
 

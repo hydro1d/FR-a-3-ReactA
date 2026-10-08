@@ -136,7 +136,6 @@ export default function App() {
           onOpenBookingModal={handleOpenBooking}
           onOpenBookingWithDoctor={handleOpenBookingWithDoctor}
           onSelectAppointment={(apt) => setSelectedAppointment(apt)}
-          onUpdateStatus={handleUpdateStatus}
           onRefresh={handleRefresh}
           isLoading={isLoading}
         />

@@ -2,11 +2,8 @@ import React from 'react';
 import {
   CalendarDays,
   Users,
-  UserCheck,
-  Activity,
   Clock,
   ArrowRight,
-  RotateCcw,
   RefreshCw,
   Plus,
   Stethoscope
@@ -23,15 +20,11 @@ export default function DashboardPage({
   onOpenBookingModal,
   onOpenBookingWithDoctor,
   onSelectAppointment,
-  onUpdateStatus,
   onRefresh,
   isLoading
 }) {
   const confirmedCount = appointments.filter((a) => a.status === 'Confirmed').length;
   const pendingCount = appointments.filter((a) => a.status === 'Pending').length;
-  const completedCount = appointments.filter((a) => a.status === 'Completed').length;
-  const todayDateStr = new Date().toISOString().split('T')[0];
-  const todayAppointments = appointments.filter((a) => a.date === todayDateStr || a.status === 'Confirmed');
 
   // Most recent 5 appointments
   const recentAppointments = appointments.slice(0, 5);

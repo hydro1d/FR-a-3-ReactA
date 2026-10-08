@@ -1,7 +1,6 @@
 import React from 'react';
 import Modal from '../common/Modal';
 import { formatCurrency } from '../../utils/formatters';
-import { Star, MapPin, Mail, Phone, Calendar, Clock } from 'lucide-react';
 
 export default function DoctorDetailModal({
   isOpen,

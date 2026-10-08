@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '../common/Modal';
 import { formatDate } from '../../utils/formatters';
-import { User, Phone, Mail, AlertTriangle, HeartPulse, Calendar } from 'lucide-react';
+import { AlertTriangle, HeartPulse } from 'lucide-react';
 
 export default function PatientDetailModal({
   isOpen,

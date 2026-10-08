@@ -2,7 +2,7 @@ import React from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
 import { formatDate, formatCurrency } from '../../utils/formatters';
-import { Calendar, Clock, Stethoscope, User, DollarSign, FileText } from 'lucide-react';
+import { Calendar, Clock, Stethoscope, User } from 'lucide-react';
 
 export default function AppointmentDetailModal({
   isOpen,

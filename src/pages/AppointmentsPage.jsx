@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Search,
-  Filter,
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  MoreVertical,
-  Plus,
-  RefreshCw,
-  AlertCircle,
-  RotateCcw
-} from 'lucide-react';
+import { Plus, AlertCircle, RotateCcw } from 'lucide-react';
 import StatusBadge from '../components/common/StatusBadge';
 import CancelConfirmModal from '../components/appointments/CancelConfirmModal';
 import { formatDate, formatCurrency } from '../utils/formatters';

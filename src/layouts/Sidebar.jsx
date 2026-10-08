@@ -2,11 +2,9 @@ import React from 'react';
 import {
   LayoutDashboard,
   CalendarDays,
-  UserCheck,
   Users,
   Stethoscope,
-  X,
-  Clock
+  X
 } from 'lucide-react';
 
 export default function Sidebar({

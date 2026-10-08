@@ -1,29 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import { formatDate, getTodayString } from '../../utils/formatters';
 
-export default function RescheduleModal({
-  isOpen,
-  onClose,
-  appointment,
-  doctors,
-  onSaveReschedule
-}) {
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('');
-  const [error, setError] = useState('');
-
+function RescheduleForm({ appointment, doctors, onSave, onClose }) {
   const today = getTodayString();
+  const doctor = doctors.find((d) => d.id === appointment.doctorId) || doctors[0];
 
-  const doctor = doctors.find((d) => d.id === appointment?.doctorId) || doctors[0];
-
-  useEffect(() => {
-    if (appointment && isOpen) {
-      setNewDate(appointment.date);
-      setNewTime(appointment.time);
-      setError('');
-    }
-  }, [appointment, isOpen]);
+  const [newDate, setNewDate] = useState(appointment.date || today);
+  const [newTime, setNewTime] = useState(appointment.time || (doctor.timeSlots ? doctor.timeSlots[0] : '10:00 AM'));
+  const [error, setError] = useState('');
 
   const handleSave = () => {
     if (!newDate) {
@@ -39,29 +24,12 @@ export default function RescheduleModal({
       return;
     }
 
-    onSaveReschedule(appointment.id, newDate, newTime);
+    onSave(appointment.id, newDate, newTime);
     onClose();
   };
 
-  if (!appointment) return null;
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Reschedule Appointment"
-      maxWidth="500px"
-      footer={
-        <>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="btn btn-book-primary" onClick={handleSave}>
-            Save New Schedule
-          </button>
-        </>
-      }
-    >
+    <>
       <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-md)' }}>
         <p style={{ fontSize: '0.875rem', fontWeight: 600 }}>
           Patient: {appointment.patientName} ({appointment.id})
@@ -84,7 +52,10 @@ export default function RescheduleModal({
           min={today}
           className="form-control"
           value={newDate}
-          onChange={(e) => setNewDate(e.target.value)}
+          onChange={(e) => {
+            setNewDate(e.target.value);
+            setError('');
+          }}
         />
       </div>
 
@@ -96,7 +67,10 @@ export default function RescheduleModal({
           id="reschedule-time"
           className="form-control"
           value={newTime}
-          onChange={(e) => setNewTime(e.target.value)}
+          onChange={(e) => {
+            setNewTime(e.target.value);
+            setError('');
+          }}
         >
           {doctor && doctor.timeSlots ? (
             doctor.timeSlots.map((slot) => (
@@ -111,6 +85,42 @@ export default function RescheduleModal({
       </div>
 
       {error && <p className="form-error" style={{ marginBottom: '12px' }}>{error}</p>}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+        <button type="button" className="btn btn-secondary" onClick={onClose}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn-book-primary" onClick={handleSave}>
+          Save New Schedule
+        </button>
+      </div>
+    </>
+  );
+}
+
+export default function RescheduleModal({
+  isOpen,
+  onClose,
+  appointment,
+  doctors,
+  onSaveReschedule
+}) {
+  if (!isOpen || !appointment) return null;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Reschedule Appointment"
+      maxWidth="500px"
+    >
+      <RescheduleForm
+        key={`${appointment.id}-${appointment.date}-${appointment.time}`}
+        appointment={appointment}
+        doctors={doctors}
+        onSave={onSaveReschedule}
+        onClose={onClose}
+      />
     </Modal>
   );
 }
