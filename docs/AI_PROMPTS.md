@@ -47,3 +47,25 @@ Establish the foundation of the frontend without jumping straight into haphazard
 - Ensured state hooks store pure serializable data in `localStorage` with fallback to default mock records.
 
 ---
+
+### Prompt 3: Core UI Implementation & Interactive Functionality
+
+**Prompt:**
+> Implement the main clinic pages (`DashboardPage`, `AppointmentsPage`, `DoctorsPage`, `PatientsPage`) and modal workflows (`BookingModal`, `RescheduleModal`, `AppointmentDetailModal`, `DoctorDetailModal`, `PatientDetailModal`) with dynamic search, status tabs, date/specialty filtering, sorting, and user interaction toasts.
+
+**Purpose:**
+Deliver full interactive application pages and modal workflows with client-side state management, search filtering, and clinical actions (booking, rescheduling, status toggling, cancellations).
+
+**Result:**
+- Created `DashboardPage` with KPI summary cards, upcoming appointment queue, and doctor roster.
+- Created `AppointmentsPage` with multi-criteria filtering (status tab, specialty, date, keyword) and sorting.
+- Created `DoctorsPage` and `PatientsPage` with specialized directories and direct booking triggers.
+- Built interactive modal workflows for booking, rescheduling, and inspecting appointments and patient medical histories.
+- Integrated toast notification feedback system.
+
+**My Review:**
+- Verified that all actions (booking, rescheduling, cancelling, status changing) immediately update state and persist to `localStorage`.
+- Verified error feedback on invalid or missing form fields in `BookingModal`.
+- Checked responsive table behavior and mobile menu drawer behavior.
+
+---

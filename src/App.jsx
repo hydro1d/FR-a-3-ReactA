@@ -1,122 +1,201 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import MainLayout from './layouts/MainLayout';
+import DashboardPage from './pages/DashboardPage';
+import AppointmentsPage from './pages/AppointmentsPage';
+import DoctorsPage from './pages/DoctorsPage';
+import PatientsPage from './pages/PatientsPage';
 
-function App() {
-  const [count, setCount] = useState(0)
+import BookingModal from './components/appointments/BookingModal';
+import RescheduleModal from './components/appointments/RescheduleModal';
+import AppointmentDetailModal from './components/appointments/AppointmentDetailModal';
+import DoctorDetailModal from './components/doctors/DoctorDetailModal';
+import PatientDetailModal from './components/patients/PatientDetailModal';
+import Toast from './components/common/Toast';
+
+import { useAppointments } from './hooks/useAppointments';
+import { INITIAL_DOCTORS, INITIAL_PATIENTS } from './data/mockData';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals state
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [bookingDoctorId, setBookingDoctorId] = useState(null);
+  const [bookingPatientId, setBookingPatientId] = useState(null);
+
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
+
+  const [selectedDoctorProfile, setSelectedDoctorProfile] = useState(null);
+  const [selectedPatientProfile, setSelectedPatientProfile] = useState(null);
+
+  // Toast notifications state
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = (message, type = 'success') => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3800);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // State management for appointments via custom hook
+  const {
+    appointments,
+    isLoading,
+    addAppointment,
+    updateStatus,
+    cancelAppointment,
+    rescheduleAppointment,
+    resetToDefault,
+    simulateRefresh
+  } = useAppointments();
+
+  // Booking Modal handlers
+  const handleOpenBooking = () => {
+    setBookingDoctorId(null);
+    setBookingPatientId(null);
+    setIsBookingOpen(true);
+  };
+
+  const handleOpenBookingWithDoctor = (doctor) => {
+    setBookingDoctorId(doctor.id);
+    setBookingPatientId(null);
+    setIsBookingOpen(true);
+  };
+
+  const handleOpenBookingWithPatient = (patient) => {
+    setBookingDoctorId(null);
+    setBookingPatientId(patient.id);
+    setIsBookingOpen(true);
+  };
+
+  const handleSaveNewAppointment = (newApt) => {
+    addAppointment(newApt);
+    addToast(`Appointment scheduled successfully for ${newApt.patientName}!`);
+  };
+
+  const handleUpdateStatus = (id, newStatus) => {
+    updateStatus(id, newStatus);
+    addToast(`Appointment ${id} status updated to ${newStatus}.`);
+  };
+
+  const handleCancelAppointment = (id) => {
+    cancelAppointment(id);
+    addToast(`Appointment ${id} cancelled.`, 'error');
+  };
+
+  const handleSaveReschedule = (id, newDate, newTime) => {
+    rescheduleAppointment(id, newDate, newTime);
+    addToast(`Appointment rescheduled to ${newDate} at ${newTime}.`);
+  };
+
+  const handleRefresh = () => {
+    simulateRefresh();
+    addToast('Clinic records synchronized.');
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <MainLayout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      onOpenBookingModal={handleOpenBooking}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      appointmentCount={appointments.filter((a) => a.status === 'Confirmed' || a.status === 'Pending').length}
+    >
+      {/* Toast Notification Container */}
+      <Toast toasts={toasts} onDismiss={removeToast} />
 
-      <div className="ticks"></div>
+      {/* Main Pages Conditional Rendering */}
+      {activeTab === 'dashboard' && (
+        <DashboardPage
+          appointments={appointments}
+          doctors={INITIAL_DOCTORS}
+          patients={INITIAL_PATIENTS}
+          onNavigateTab={setActiveTab}
+          onOpenBookingModal={handleOpenBooking}
+          onOpenBookingWithDoctor={handleOpenBookingWithDoctor}
+          onSelectAppointment={(apt) => setSelectedAppointment(apt)}
+          onUpdateStatus={handleUpdateStatus}
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
+      )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {activeTab === 'appointments' && (
+        <AppointmentsPage
+          appointments={appointments}
+          onOpenBookingModal={handleOpenBooking}
+          onSelectAppointment={(apt) => setSelectedAppointment(apt)}
+          onOpenReschedule={(apt) => setReschedulingAppointment(apt)}
+          onUpdateStatus={handleUpdateStatus}
+          onCancelAppointment={handleCancelAppointment}
+        />
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {activeTab === 'doctors' && (
+        <DoctorsPage
+          doctors={INITIAL_DOCTORS}
+          onOpenBookingWithDoctor={handleOpenBookingWithDoctor}
+          onSelectDoctorProfile={(doc) => setSelectedDoctorProfile(doc)}
+        />
+      )}
+
+      {activeTab === 'patients' && (
+        <PatientsPage
+          patients={INITIAL_PATIENTS}
+          onOpenBookingWithPatient={handleOpenBookingWithPatient}
+          onSelectPatient={(pat) => setSelectedPatientProfile(pat)}
+        />
+      )}
+
+      {/* Interactive Modals */}
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        doctors={INITIAL_DOCTORS}
+        patients={INITIAL_PATIENTS}
+        initialDoctorId={bookingDoctorId}
+        initialPatientId={bookingPatientId}
+        onSaveAppointment={handleSaveNewAppointment}
+      />
+
+      <RescheduleModal
+        isOpen={!!reschedulingAppointment}
+        onClose={() => setReschedulingAppointment(null)}
+        appointment={reschedulingAppointment}
+        doctors={INITIAL_DOCTORS}
+        onSaveReschedule={handleSaveReschedule}
+      />
+
+      <AppointmentDetailModal
+        isOpen={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+        appointment={selectedAppointment}
+        onUpdateStatus={handleUpdateStatus}
+        onOpenReschedule={(apt) => setReschedulingAppointment(apt)}
+      />
+
+      <DoctorDetailModal
+        isOpen={!!selectedDoctorProfile}
+        onClose={() => setSelectedDoctorProfile(null)}
+        doctor={selectedDoctorProfile}
+        onOpenBooking={(doc) => handleOpenBookingWithDoctor(doc)}
+      />
+
+      <PatientDetailModal
+        isOpen={!!selectedPatientProfile}
+        onClose={() => setSelectedPatientProfile(null)}
+        patient={selectedPatientProfile}
+        onOpenBooking={(pat) => handleOpenBookingWithPatient(pat)}
+      />
+    </MainLayout>
+  );
 }
-
-export default App
