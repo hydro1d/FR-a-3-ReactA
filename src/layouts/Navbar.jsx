@@ -1,11 +1,11 @@
-import React from 'react';
-import { Menu, Search, Plus, Calendar, Bell } from 'lucide-react';
+import { Menu, Search, Plus, RotateCcw } from 'lucide-react';
 
 export default function Navbar({
   onToggleSidebar,
   onOpenBookingModal,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onResetData
 }) {
   return (
     <header className="navbar" role="banner">
@@ -32,6 +32,17 @@ export default function Navbar({
       </div>
 
       <div className="navbar-right">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={onResetData}
+          title="Reset to original mock data"
+          style={{ fontSize: '0.8rem', padding: '7px 12px' }}
+        >
+          <RotateCcw size={14} />
+          <span>Reset Demo</span>
+        </button>
+
         <button
           id="btn-new-appointment-top"
           className="btn-book-primary"

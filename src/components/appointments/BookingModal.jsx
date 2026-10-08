@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import Modal from '../common/Modal';
 import { getTodayString, generateAppointmentId } from '../../utils/formatters';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function BookingModal({
   isOpen,
   onClose,
   doctors,
   patients,
+  existingAppointments = [],
   initialDoctorId,
   initialPatientId,
   onSaveAppointment
@@ -25,6 +27,7 @@ export default function BookingModal({
 
   const [errors, setErrors] = useState({});
 
+  const formId = useId();
   const today = getTodayString();
 
   // Reset and pre-populate fields when modal opens
@@ -52,31 +55,52 @@ export default function BookingModal({
     }
   }, [selectedDoctorId, selectedDoctor]);
 
+  // Collision detection: Check if the doctor is already booked for this slot
+  const isSlotOccupied = (timeSlot) => {
+    if (!selectedDoctorId || !appointmentDate || !timeSlot) return false;
+    return existingAppointments.some(
+      (apt) =>
+        apt.doctorId === selectedDoctorId &&
+        apt.date === appointmentDate &&
+        apt.time === timeSlot &&
+        apt.status !== 'Cancelled'
+    );
+  };
+
   const validate = () => {
     const errs = {};
     if (patientMode === 'existing') {
-      if (!selectedPatientId) errs.patient = 'Please select a registered patient';
+      if (!selectedPatientId) errs.patient = 'Please select an existing registered patient.';
     } else {
-      if (!newPatientName.trim()) errs.newPatientName = 'Patient full name is required';
-      if (!newPatientPhone.trim()) errs.newPatientPhone = 'Patient phone is required';
+      if (!newPatientName.trim()) errs.newPatientName = 'Patient full name is required.';
+      if (!newPatientPhone.trim()) errs.newPatientPhone = 'Valid phone number is required.';
     }
 
-    if (!selectedDoctorId) errs.doctor = 'Please select a specialist';
+    if (!selectedDoctorId) errs.doctor = 'Please select a specialist.';
     if (!appointmentDate) {
-      errs.date = 'Appointment date is required';
+      errs.date = 'Appointment date is required.';
     } else if (appointmentDate < today) {
-      errs.date = 'Appointment date cannot be in the past';
+      errs.date = 'Appointment date cannot be in the past.';
     }
 
-    if (!appointmentTime) errs.time = 'Please select an appointment time slot';
-    if (!reason.trim()) errs.reason = 'Please provide the clinical reason for the visit';
+    if (!appointmentTime) {
+      errs.time = 'Please select an appointment time slot.';
+    } else if (isSlotOccupied(appointmentTime)) {
+      errs.time = 'This time slot is already reserved for this specialist. Please choose another slot.';
+    }
+
+    if (!reason.trim()) {
+      errs.reason = 'Please provide the clinical reason for the visit.';
+    } else if (reason.trim().length < 4) {
+      errs.reason = 'Reason description must be at least 4 characters long.';
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!validate()) return;
 
     let patientName = '';
@@ -124,6 +148,7 @@ export default function BookingModal({
           </button>
           <button
             type="button"
+            id="modal-submit-booking"
             className="btn btn-book-primary"
             onClick={handleSubmit}
           >
@@ -132,15 +157,22 @@ export default function BookingModal({
         </>
       }
     >
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit} noValidate aria-describedby={`${formId}-desc`}>
+        <p id={`${formId}-desc`} className="sr-only" style={{ display: 'none' }}>
+          Form to schedule a new patient appointment with an attending doctor.
+        </p>
+
         {/* Patient Selection Tabs */}
         <div className="form-group">
-          <label className="form-label">Patient Record</label>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+          <label className="form-label" id={`${formId}-patient-mode-label`}>
+            Patient Record Selection
+          </label>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }} role="group" aria-labelledby={`${formId}-patient-mode-label`}>
             <button
               type="button"
               className={`btn btn-sm ${patientMode === 'existing' ? 'btn-book-primary' : 'btn-secondary'}`}
               onClick={() => setPatientMode('existing')}
+              aria-pressed={patientMode === 'existing'}
             >
               Registered Patient
             </button>
@@ -148,49 +180,82 @@ export default function BookingModal({
               type="button"
               className={`btn btn-sm ${patientMode === 'new' ? 'btn-book-primary' : 'btn-secondary'}`}
               onClick={() => setPatientMode('new')}
+              aria-pressed={patientMode === 'new'}
             >
-              + Quick Register Patient
+              + Quick Register New Patient
             </button>
           </div>
 
           {patientMode === 'existing' ? (
             <div>
+              <label htmlFor={`${formId}-patient-select`} className="sr-only" style={{ display: 'none' }}>
+                Select Registered Patient
+              </label>
               <select
-                id="booking-patient-select"
+                id={`${formId}-patient-select`}
                 className={`form-control ${errors.patient ? 'has-error' : ''}`}
                 value={selectedPatientId}
                 onChange={(e) => setSelectedPatientId(e.target.value)}
+                aria-invalid={Boolean(errors.patient)}
+                aria-describedby={errors.patient ? `${formId}-patient-error` : undefined}
               >
-                <option value="">Select a patient...</option>
+                <option value="">Select a registered patient...</option>
                 {patients.map((pat) => (
                   <option key={pat.id} value={pat.id}>
                     {pat.name} ({pat.id}) — {pat.phone}
                   </option>
                 ))}
               </select>
-              {errors.patient && <p className="form-error">{errors.patient}</p>}
+              {errors.patient && (
+                <p id={`${formId}-patient-error`} className="form-error" role="alert">
+                  <AlertCircle size={14} />
+                  <span>{errors.patient}</span>
+                </p>
+              )}
             </div>
           ) : (
             <div className="form-grid-2">
               <div>
+                <label htmlFor={`${formId}-new-name`} className="form-label">
+                  Patient Full Name *
+                </label>
                 <input
+                  id={`${formId}-new-name`}
                   type="text"
-                  placeholder="Full Name"
+                  placeholder="e.g. Rachel Adams"
                   className={`form-control ${errors.newPatientName ? 'has-error' : ''}`}
                   value={newPatientName}
                   onChange={(e) => setNewPatientName(e.target.value)}
+                  aria-invalid={Boolean(errors.newPatientName)}
+                  aria-describedby={errors.newPatientName ? `${formId}-new-name-error` : undefined}
                 />
-                {errors.newPatientName && <p className="form-error">{errors.newPatientName}</p>}
+                {errors.newPatientName && (
+                  <p id={`${formId}-new-name-error`} className="form-error" role="alert">
+                    <AlertCircle size={14} />
+                    <span>{errors.newPatientName}</span>
+                  </p>
+                )}
               </div>
               <div>
+                <label htmlFor={`${formId}-new-phone`} className="form-label">
+                  Phone Number *
+                </label>
                 <input
+                  id={`${formId}-new-phone`}
                   type="tel"
-                  placeholder="Phone Number"
+                  placeholder="e.g. +1 555-0199"
                   className={`form-control ${errors.newPatientPhone ? 'has-error' : ''}`}
                   value={newPatientPhone}
                   onChange={(e) => setNewPatientPhone(e.target.value)}
+                  aria-invalid={Boolean(errors.newPatientPhone)}
+                  aria-describedby={errors.newPatientPhone ? `${formId}-new-phone-error` : undefined}
                 />
-                {errors.newPatientPhone && <p className="form-error">{errors.newPatientPhone}</p>}
+                {errors.newPatientPhone && (
+                  <p id={`${formId}-new-phone-error`} className="form-error" role="alert">
+                    <AlertCircle size={14} />
+                    <span>{errors.newPatientPhone}</span>
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -198,14 +263,16 @@ export default function BookingModal({
 
         {/* Doctor Selection */}
         <div className="form-group">
-          <label className="form-label" htmlFor="booking-doctor-select">
-            Attending Specialist & Specialty
+          <label className="form-label" htmlFor={`${formId}-doctor-select`}>
+            Attending Specialist & Specialty *
           </label>
           <select
-            id="booking-doctor-select"
+            id={`${formId}-doctor-select`}
             className={`form-control ${errors.doctor ? 'has-error' : ''}`}
             value={selectedDoctorId}
             onChange={(e) => setSelectedDoctorId(e.target.value)}
+            aria-invalid={Boolean(errors.doctor)}
+            aria-describedby={errors.doctor ? `${formId}-doctor-error` : undefined}
           >
             {doctors.map((doc) => (
               <option key={doc.id} value={doc.id}>
@@ -213,47 +280,69 @@ export default function BookingModal({
               </option>
             ))}
           </select>
-          {errors.doctor && <p className="form-error">{errors.doctor}</p>}
+          {errors.doctor && (
+            <p id={`${formId}-doctor-error`} className="form-error" role="alert">
+              <AlertCircle size={14} />
+              <span>{errors.doctor}</span>
+            </p>
+          )}
         </div>
 
         {/* Date and Time Grid */}
         <div className="form-grid-2">
           <div className="form-group">
-            <label className="form-label" htmlFor="booking-date-input">
-              Appointment Date
+            <label className="form-label" htmlFor={`${formId}-date-input`}>
+              Appointment Date *
             </label>
             <input
-              id="booking-date-input"
+              id={`${formId}-date-input`}
               type="date"
               min={today}
               className={`form-control ${errors.date ? 'has-error' : ''}`}
               value={appointmentDate}
               onChange={(e) => setAppointmentDate(e.target.value)}
+              aria-invalid={Boolean(errors.date)}
+              aria-describedby={errors.date ? `${formId}-date-error` : undefined}
             />
-            {errors.date && <p className="form-error">{errors.date}</p>}
+            {errors.date && (
+              <p id={`${formId}-date-error`} className="form-error" role="alert">
+                <AlertCircle size={14} />
+                <span>{errors.date}</span>
+              </p>
+            )}
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="booking-time-select">
-              Available Time Slot
+            <label className="form-label" htmlFor={`${formId}-time-select`}>
+              Available Time Slot *
             </label>
             <select
-              id="booking-time-select"
+              id={`${formId}-time-select`}
               className={`form-control ${errors.time ? 'has-error' : ''}`}
               value={appointmentTime}
               onChange={(e) => setAppointmentTime(e.target.value)}
+              aria-invalid={Boolean(errors.time)}
+              aria-describedby={errors.time ? `${formId}-time-error` : undefined}
             >
               {selectedDoctor && selectedDoctor.timeSlots ? (
-                selectedDoctor.timeSlots.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {slot}
-                  </option>
-                ))
+                selectedDoctor.timeSlots.map((slot) => {
+                  const occupied = isSlotOccupied(slot);
+                  return (
+                    <option key={slot} value={slot} disabled={occupied}>
+                      {slot} {occupied ? '(Reserved)' : '(Available)'}
+                    </option>
+                  );
+                })
               ) : (
                 <option value="10:00 AM">10:00 AM</option>
               )}
             </select>
-            {errors.time && <p className="form-error">{errors.time}</p>}
+            {errors.time && (
+              <p id={`${formId}-time-error`} className="form-error" role="alert">
+                <AlertCircle size={14} />
+                <span>{errors.time}</span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -264,7 +353,7 @@ export default function BookingModal({
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
               <input
                 type="radio"
-                name="aptType"
+                name={`${formId}-aptType`}
                 value="In-person"
                 checked={appointmentType === 'In-person'}
                 onChange={() => setAppointmentType('In-person')}
@@ -274,7 +363,7 @@ export default function BookingModal({
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
               <input
                 type="radio"
-                name="aptType"
+                name={`${formId}-aptType`}
                 value="Telehealth"
                 checked={appointmentType === 'Telehealth'}
                 onChange={() => setAppointmentType('Telehealth')}
@@ -284,31 +373,38 @@ export default function BookingModal({
           </div>
         </div>
 
-        {/* Chief Complaint / Reason */}
+        {/* Reason */}
         <div className="form-group">
-          <label className="form-label" htmlFor="booking-reason-input">
-            Reason for Visit / Primary Symptoms *
+          <label className="form-label" htmlFor={`${formId}-reason-input`}>
+            Reason for Consultation / Symptoms *
           </label>
           <input
-            id="booking-reason-input"
+            id={`${formId}-reason-input`}
             type="text"
             placeholder="e.g. Annual cardiac review, sharp joint pain, routine refill"
             className={`form-control ${errors.reason ? 'has-error' : ''}`}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            aria-invalid={Boolean(errors.reason)}
+            aria-describedby={errors.reason ? `${formId}-reason-error` : undefined}
           />
-          {errors.reason && <p className="form-error">{errors.reason}</p>}
+          {errors.reason && (
+            <p id={`${formId}-reason-error`} className="form-error" role="alert">
+              <AlertCircle size={14} />
+              <span>{errors.reason}</span>
+            </p>
+          )}
         </div>
 
-        {/* Clinical Notes */}
+        {/* Notes */}
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label" htmlFor="booking-notes-input">
-            Desk Notes / Triage Instructions (Optional)
+          <label className="form-label" htmlFor={`${formId}-notes-input`}>
+            Clinical Triage Notes (Optional)
           </label>
           <textarea
-            id="booking-notes-input"
+            id={`${formId}-notes-input`}
             rows={2}
-            placeholder="Patient requests assistance with mobility, interpreter required, etc."
+            placeholder="Special requests, patient mobility notes, allergy precautions..."
             className="form-control"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

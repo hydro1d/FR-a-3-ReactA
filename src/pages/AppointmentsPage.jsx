@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -9,93 +9,49 @@ import {
   MoreVertical,
   Plus,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import StatusBadge from '../components/common/StatusBadge';
+import CancelConfirmModal from '../components/appointments/CancelConfirmModal';
 import { formatDate, formatCurrency } from '../utils/formatters';
 import { SPECIALTIES } from '../data/mockData';
+import { useAppointmentFilter } from '../hooks/useAppointmentFilter';
 
 export default function AppointmentsPage({
   appointments,
+  externalSearchQuery = '',
   onOpenBookingModal,
   onSelectAppointment,
   onOpenReschedule,
   onUpdateStatus,
   onCancelAppointment
 }) {
-  const [selectedStatusTab, setSelectedStatusTab] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialties');
-  const [filterDate, setFilterDate] = useState('');
-  const [sortBy, setSortBy] = useState('date-desc');
+  const {
+    filteredAppointments,
+    statusCounts,
+    selectedStatusTab,
+    setSelectedStatusTab,
+    searchQuery,
+    setSearchQuery,
+    selectedSpecialty,
+    setSelectedSpecialty,
+    filterDate,
+    setFilterDate,
+    sortBy,
+    setSortBy,
+    clearFilters,
+    hasActiveFilters
+  } = useAppointmentFilter(appointments, externalSearchQuery);
 
-  // Filtered and sorted appointments
-  const filteredAppointments = useMemo(() => {
-    return appointments
-      .filter((apt) => {
-        // Status filter
-        if (selectedStatusTab !== 'ALL' && apt.status.toUpperCase() !== selectedStatusTab) {
-          return false;
-        }
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
 
-        // Specialty filter
-        if (selectedSpecialty !== 'All Specialties' && apt.specialty !== selectedSpecialty) {
-          return false;
-        }
-
-        // Date filter
-        if (filterDate && apt.date !== filterDate) {
-          return false;
-        }
-
-        // Search text filter
-        if (searchQuery.trim()) {
-          const query = searchQuery.toLowerCase();
-          const matchesPatient = apt.patientName.toLowerCase().includes(query);
-          const matchesDoctor = apt.doctorName.toLowerCase().includes(query);
-          const matchesId = apt.id.toLowerCase().includes(query);
-          const matchesReason = (apt.reason || '').toLowerCase().includes(query);
-          if (!matchesPatient && !matchesDoctor && !matchesId && !matchesReason) {
-            return false;
-          }
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'date-desc') {
-          return new Date(b.date) - new Date(a.date);
-        }
-        if (sortBy === 'date-asc') {
-          return new Date(a.date) - new Date(b.date);
-        }
-        if (sortBy === 'patient') {
-          return a.patientName.localeCompare(b.patientName);
-        }
-        if (sortBy === 'doctor') {
-          return a.doctorName.localeCompare(b.doctorName);
-        }
-        return 0;
-      });
-  }, [appointments, selectedStatusTab, selectedSpecialty, filterDate, searchQuery, sortBy]);
-
-  const statusCounts = useMemo(() => {
-    return {
-      ALL: appointments.length,
-      CONFIRMED: appointments.filter((a) => a.status === 'Confirmed').length,
-      PENDING: appointments.filter((a) => a.status === 'Pending').length,
-      COMPLETED: appointments.filter((a) => a.status === 'Completed').length,
-      CANCELLED: appointments.filter((a) => a.status === 'Cancelled').length
-    };
-  }, [appointments]);
-
-  const handleClearFilters = () => {
-    setSelectedStatusTab('ALL');
-    setSearchQuery('');
-    setSelectedSpecialty('All Specialties');
-    setFilterDate('');
-    setSortBy('date-desc');
-  };
+  // Sync external search query if updated from parent
+  useEffect(() => {
+    if (externalSearchQuery !== undefined) {
+      setSearchQuery(externalSearchQuery);
+    }
+  }, [externalSearchQuery, setSearchQuery]);
 
   return (
     <div>
@@ -104,7 +60,7 @@ export default function AppointmentsPage({
         <div>
           <h2 className="page-title">Appointment Schedules</h2>
           <p className="page-description">
-            Search, filter, confirm, reschedule, or cancel patient clinic appointments.
+            Filter, search, confirm, reschedule, or cancel patient clinic appointments.
           </p>
         </div>
         <button
@@ -120,7 +76,7 @@ export default function AppointmentsPage({
       {/* Filter Toolbar */}
       <div className="filter-bar">
         {/* Status Tabs */}
-        <div className="tabs-list" role="tablist">
+        <div className="tabs-list" role="tablist" aria-label="Appointment status tabs">
           {[
             { id: 'ALL', label: 'All', count: statusCounts.ALL },
             { id: 'CONFIRMED', label: 'Confirmed', count: statusCounts.CONFIRMED },
@@ -142,6 +98,16 @@ export default function AppointmentsPage({
 
         {/* Filter Controls Group */}
         <div className="filter-group">
+          {/* Keyword Search Input */}
+          <input
+            type="text"
+            className="filter-input"
+            placeholder="Filter patient, doctor, ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Filter appointments by text"
+          />
+
           {/* Specialty Dropdown */}
           <select
             className="filter-input"
@@ -163,7 +129,7 @@ export default function AppointmentsPage({
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
             aria-label="Filter by appointment date"
-            title="Filter by specific date"
+            title="Filter by date"
           />
 
           {/* Sort By Dropdown */}
@@ -177,15 +143,17 @@ export default function AppointmentsPage({
             <option value="date-asc">Date (Oldest First)</option>
             <option value="patient">Patient Name (A-Z)</option>
             <option value="doctor">Doctor Name (A-Z)</option>
+            <option value="fee-desc">Fee (Highest First)</option>
           </select>
 
-          {(searchQuery || selectedSpecialty !== 'All Specialties' || filterDate || selectedStatusTab !== 'ALL') && (
+          {hasActiveFilters && (
             <button
               className="btn btn-secondary btn-sm"
-              onClick={handleClearFilters}
+              onClick={clearFilters}
               style={{ whiteSpace: 'nowrap' }}
             >
-              Reset Filters
+              <RotateCcw size={13} />
+              <span>Reset</span>
             </button>
           )}
         </div>
@@ -199,12 +167,14 @@ export default function AppointmentsPage({
           </div>
           <h3 className="state-title">No matching appointments found</h3>
           <p className="state-text">
-            No appointments matched your current search filters or date range. Try clearing your filters or creating a new booking.
+            No appointments matched your current search filters or date range. Try resetting your filter controls or booking a new visit.
           </p>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-secondary" onClick={handleClearFilters}>
-              Clear Filters
-            </button>
+            {hasActiveFilters && (
+              <button className="btn btn-secondary" onClick={clearFilters}>
+                Clear Filters
+              </button>
+            )}
             <button className="btn btn-book-primary" onClick={onOpenBookingModal}>
               Book Appointment
             </button>
@@ -315,7 +285,7 @@ export default function AppointmentsPage({
                           </button>
                           <button
                             className="btn btn-danger btn-sm"
-                            onClick={() => onCancelAppointment(apt.id)}
+                            onClick={() => setAppointmentToCancel(apt)}
                             title="Cancel Booking"
                           >
                             Cancel
@@ -330,6 +300,14 @@ export default function AppointmentsPage({
           </table>
         </div>
       )}
+
+      {/* Cancellation Confirmation Safeguard Modal */}
+      <CancelConfirmModal
+        isOpen={!!appointmentToCancel}
+        onClose={() => setAppointmentToCancel(null)}
+        appointment={appointmentToCancel}
+        onConfirmCancel={onCancelAppointment}
+      />
     </div>
   );
 }

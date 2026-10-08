@@ -9,6 +9,7 @@ export default function MainLayout({
   onOpenBookingModal,
   searchQuery,
   onSearchChange,
+  onResetData,
   appointmentCount
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,6 +29,7 @@ export default function MainLayout({
           onOpenBookingModal={onOpenBookingModal}
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
+          onResetData={onResetData}
         />
         <main className="page-container" role="main">
           {children}

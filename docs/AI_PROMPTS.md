@@ -69,3 +69,43 @@ Deliver full interactive application pages and modal workflows with client-side 
 - Checked responsive table behavior and mobile menu drawer behavior.
 
 ---
+
+### Prompt 4: UI/UX Refinement & Responsive Polish
+
+**Prompt:**
+> Refine the application UI/UX: add quick demo reset capability to the top navbar, integrate accessible confirmation prompts before irreversible actions (such as appointment cancellation), add status pill micro-animations, and synchronize global search in the top navbar with the appointments table.
+
+**Purpose:**
+Address visual polish and edge-case user experience gaps identified during testing to make the system feel production-grade rather than a prototype.
+
+**Result:**
+- Added `CancelConfirmModal` to prevent accidental cancellations.
+- Added "Reset Demo" button in `Navbar` allowing evaluators to return to initial mock state.
+- Connected global search directly to appointments view with auto-routing on search entry.
+- Enhanced pulse animations and hover card micro-interactions.
+
+**My Review:**
+- Accepted the cancellation safeguard modal; irreversible data changes should always require user confirmation.
+- Confirmed that search typing smoothly transitions from Dashboard to Appointments view.
+
+---
+
+### Prompt 5: Code Review & Manual Refactoring (3 Target Areas)
+
+**Prompt:**
+> Perform a critical code audit and refactor three core areas: (1) Extract inline filtering/sorting into a reusable custom hook `useAppointmentFilter`, (2) Hardened `BookingModal` validation by preventing double-booking of doctor time slots and adding ARIA accessibility attributes, and (3) Decouple global search query state and synchronize with table filters.
+
+**Purpose:**
+Refactor initial AI-generated monolithic components into clean, testable, and accessible patterns that demonstrate conscious engineering decisions.
+
+**Result:**
+- Created `src/hooks/useAppointmentFilter.js` isolating multi-criteria filtering, sorting, and tab counts.
+- Updated `BookingModal.jsx` with slot collision detection (`isSlotOccupied`) and ARIA accessibility labels (`aria-invalid`, `aria-describedby`, accessible form errors).
+- Cleaned up `AppointmentsPage.jsx` by delegating state logic to the new custom hook.
+
+**My Review:**
+- Verified that collision detection stops duplicate slot bookings for the same specialist on the same date.
+- Confirmed screen reader accessibility attributes are present on every input and error message.
+- Validated that the code is structured cleanly and easily explainable in an assessment interview.
+
+---

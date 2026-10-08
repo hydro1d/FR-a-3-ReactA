@@ -96,6 +96,18 @@ export default function App() {
     addToast(`Appointment rescheduled to ${newDate} at ${newTime}.`);
   };
 
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    if (query && activeTab !== 'appointments') {
+      setActiveTab('appointments');
+    }
+  };
+
+  const handleResetData = () => {
+    resetToDefault();
+    addToast('Demo data restored to initial state.');
+  };
+
   const handleRefresh = () => {
     simulateRefresh();
     addToast('Clinic records synchronized.');
@@ -107,7 +119,8 @@ export default function App() {
       setActiveTab={setActiveTab}
       onOpenBookingModal={handleOpenBooking}
       searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
+      onSearchChange={handleSearchChange}
+      onResetData={handleResetData}
       appointmentCount={appointments.filter((a) => a.status === 'Confirmed' || a.status === 'Pending').length}
     >
       {/* Toast Notification Container */}
@@ -132,6 +145,7 @@ export default function App() {
       {activeTab === 'appointments' && (
         <AppointmentsPage
           appointments={appointments}
+          externalSearchQuery={searchQuery}
           onOpenBookingModal={handleOpenBooking}
           onSelectAppointment={(apt) => setSelectedAppointment(apt)}
           onOpenReschedule={(apt) => setReschedulingAppointment(apt)}
@@ -162,6 +176,7 @@ export default function App() {
         onClose={() => setIsBookingOpen(false)}
         doctors={INITIAL_DOCTORS}
         patients={INITIAL_PATIENTS}
+        existingAppointments={appointments}
         initialDoctorId={bookingDoctorId}
         initialPatientId={bookingPatientId}
         onSaveAppointment={handleSaveNewAppointment}
